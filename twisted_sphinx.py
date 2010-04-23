@@ -97,20 +97,7 @@ SPH_GROUPBY_YEAR		= 3
 SPH_GROUPBY_ATTR		= 4
 SPH_GROUPBY_ATTRPAIR	= 5
 
-
-
-def wrap(method, *args, **kargs):
-    if method is None:
-        return None
-    if args or kargs:
-        method = functools.partial(method, *args, **kargs)
-    def wrapper(*args, **kargs):
-        return method(*args, **kargs)
-    return wrapper
-
-
-
-class Sphinx(protocol.Protocol, policies.TimeoutMixin):
+class Sphinx(protocol.Protocol):
     """Client Protocol to connect with Sphinx searchd daemon.
     Example of use:
 
@@ -170,20 +157,22 @@ class Sphinx(protocol.Protocol, policies.TimeoutMixin):
         self._reqs			= []							# requests array for multi-query
         self._replyQueue    = defer.DeferredQueue()
         self._rawReplyQueue = defer.DeferredQueue()
+        self._initialized   = False
+        self._writeData     = None
 
     def _write(self,data):
-        self.transport.write(data)
-
-    def connectionMade(self):
-        self._write(pack('>L', 1))
+        if self._initialized:
+            self.transport.write(data)
+        else:
+            self._writeData = data
             
 
     def dataReceived(self, data):
         """
         INTERNAL METHOD, DO NOT CALL. Gets and checks response packet from searchd server.
         """
-        self.resetTimeout()
         if len(data) == 4:
+            self._initialized = True
             v = unpack('>L', data)
             if v[0]<1:
                 self.transport.loseConnection()
@@ -192,7 +181,13 @@ class Sphinx(protocol.Protocol, policies.TimeoutMixin):
 
         elif len(data) > 8:
             self._replyReceived(data)
+        
+        if self._writeData:
+            self._write(self._writeData)
 
+
+    def close(self):
+        self.transport.loseConnection()
 
     def _replyReceived(self,data):
         
@@ -201,8 +196,6 @@ class Sphinx(protocol.Protocol, policies.TimeoutMixin):
 
         (status, ver, length) = unpack('>2HL', _header)
         response = _body[:length]
-
-        self.transport.loseConnection()
 
         # check response
         read = len(response)
