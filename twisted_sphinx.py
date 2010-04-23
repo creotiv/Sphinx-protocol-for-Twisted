@@ -948,6 +948,3 @@ class Sphinx(protocol.Protocol, policies.TimeoutMixin):
         return re.sub(r"([=\(\)|\-!@~\"&/\\\^\$\=])", r"\\\1", string)
 
 
-#
-# $Id: sphinxapi.py 2055 2009-11-06 23:09:58Z shodan $
-#
