@@ -1,6 +1,6 @@
 # -* coding: utf-8 -*-
 from twisted.internet import reactor
-from sp_api.sphinxapi import Sphinx
+from lib.server.twisted_sphinx import Sphinx
 from twisted.internet.defer import inlineCallbacks
 
    
