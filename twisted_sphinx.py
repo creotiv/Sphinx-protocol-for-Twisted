@@ -14,7 +14,8 @@
 # did not, you can find it at http://www.gnu.org/
 #
 
-from twisted.internet import protocol, deferfrom twisted.protocols import policies
+from twisted.internet import protocol, defer
+from twisted.protocols import policies
 from twisted.internet.defer import inlineCallbacks
 
 import functools
@@ -110,6 +111,30 @@ def wrap(method, *args, **kargs):
 
 
 class Sphinx(protocol.Protocol, policies.TimeoutMixin):
+    """Client Protocol to connect with Sphinx searchd daemon.
+    Example of use:
+
+    from twisted.internet import reactor
+    from lib.server.twisted_sphinx import Sphinx
+    from twisted.internet.defer import inlineCallbacks
+
+       
+    from twisted.internet import protocol
+
+    from pprint import pprint
+
+    @defer.inlineCallbacks
+    def main():
+        clientCreator = protocol.ClientCreator(reactor, Sphinx)
+        conn = yield clientCreator.connectTCP('127.0.0.1',9312)
+        
+        res = yield conn.Query('hello')
+        pprint(res)
+
+    main()
+
+    reactor.run()
+    """
     def __init__(self,**kwargs):
         """
         Create a new client object, and fill defaults.
@@ -175,7 +200,7 @@ class Sphinx(protocol.Protocol, policies.TimeoutMixin):
         _body = data[8:]		
 
         (status, ver, length) = unpack('>2HL', _header)
-        response = _body
+        response = _body[:length]
 
         self.transport.loseConnection()
 
