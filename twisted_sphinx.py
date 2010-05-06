@@ -97,6 +97,7 @@ SPH_GROUPBY_YEAR		= 3
 SPH_GROUPBY_ATTR		= 4
 SPH_GROUPBY_ATTRPAIR	= 5
 
+
 class Sphinx(protocol.Protocol):
     """Client Protocol to connect with Sphinx searchd daemon.
     Example of use:
@@ -166,6 +167,8 @@ class Sphinx(protocol.Protocol):
         else:
             self._writeData = data
             
+    def connectionMade(self):
+        self.transport.write(pack('>L', 1))
 
     def dataReceived(self, data):
         """
@@ -603,7 +606,8 @@ class Sphinx(protocol.Protocol):
         'values' must be a dict with int key (document ID) and list of int values (new attribute values).
 
         Example:
-            res = cl.UpdateAttributes ( 'test1', [ 'group_id', 'date_added' ], { 2:[123,1000000000], 4:[456,1234567890] } )
+        
+        C{res = cl.UpdateAttributes ( 'test1', [ 'group_id', 'date_added' ], { 2:[123,1000000000], 4:[456,1234567890] } )}
         """
         assert ( isinstance ( index, str ) )
         assert ( isinstance ( attrs, list ) )
